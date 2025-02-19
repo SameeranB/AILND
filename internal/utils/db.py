@@ -1,16 +1,23 @@
 from tortoise import Tortoise
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
+# Create a data directory if it doesn't exist
+os.makedirs("data", exist_ok=True)
 
 TORTOISE_ORM_CONFIG = {
     "connections": {
-        "default": "postgres://localhost:5432/postgres"
+        "default": "sqlite://data/db.sqlite3"
     },
     "apps": {
         "models": {
-            "models": ["internal.repository.course", "aerich.models"],
+            "models": [
+                "internal.repository.course",
+                "internal.repository.student_progress",
+                "aerich.models"
+            ],
             "default_connection": "default"
         }
     }
@@ -25,8 +32,12 @@ async def init_db() -> None:
     try:
         # Initialize database connection
         await Tortoise.init(
-            db_url=f"postgres://localhost:5432/postgres",
-            modules={"models": ["internal.repository.course", "aerich.models"]},
+            db_url="sqlite://data/db.sqlite3",
+            modules={"models": [
+                "internal.repository.course",
+                "internal.repository.student_progress",
+                "aerich.models"
+            ]},
             timezone="UTC"
         )
 

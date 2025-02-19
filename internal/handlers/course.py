@@ -2,7 +2,7 @@ import logging
 import pdb
 from typing import List, Optional, Dict, Any
 
-from internal.repository.course import Course, OutlineSection, LessonType
+from internal.repository.course import Course, OutlineSection, LessonType, Quiz, Content
 
 logger = logging.getLogger(__name__)
 
@@ -143,17 +143,59 @@ class CourseCreateHandler:
 class CourseDeleteHandler:
     @staticmethod
     async def delete_course(course_id: str) -> bool:
-        """Delete a course
+        """Delete a course and all its related data
 
         Args:
             course_id: The ID of the course to delete
 
         Returns:
             bool: True if course was deleted, False if course was not found
+            
+        Raises:
+            Exception: If there's an error during deletion
         """
-        course = await Course.get_or_none(id=course_id)
-        if not course:
-            return False
+        try:
+            logger.info(f"Attempting to delete course with ID: {course_id}")
+            
+            course = await Course.get_or_none(id=course_id)
+            if not course:
+                logger.warning(f"Course with ID {course_id} not found")
+                return False
 
-        await course.delete()
-        return True
+            logger.info(f"Found course: {course.title} (ID: {course_id})")
+            
+            # Fetch related sections
+            await course.fetch_related('outline_sections')
+            logger.info(f"Found {len(course.outline_sections)} sections to delete")
+            
+            # Delete related data for each section
+            for section in course.outline_sections:
+                try:
+                    logger.info(f"Processing section {section.id}: {section.title}")
+                    
+                    # Delete quiz if exists
+                    if section.quiz_id:
+                        logger.info(f"Deleting quiz {section.quiz_id}")
+                        await Quiz.filter(id=section.quiz_id).delete()
+                    
+                    # Delete content if exists
+                    if section.content_id:
+                        logger.info(f"Deleting content {section.content_id}")
+                        await Content.filter(id=section.content_id).delete()
+                    
+                    # Delete the section
+                    logger.info(f"Deleting section {section.id}")
+                    await section.delete()
+                except Exception as e:
+                    logger.error(f"Error deleting section {section.id}: {str(e)}")
+                    raise Exception(f"Failed to delete section {section.id}: {str(e)}")
+
+            # Finally delete the course
+            logger.info(f"Deleting course {course_id}")
+            await course.delete()
+            logger.info(f"Successfully deleted course {course_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error in delete_course: {str(e)}")
+            raise Exception(f"Failed to delete course: {str(e)}")

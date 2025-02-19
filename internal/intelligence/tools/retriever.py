@@ -10,8 +10,12 @@ from langchain_community.vectorstores import FAISS
 from internal.utils.storage import StorageHandler
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import logging
+from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
+
+# Load environment variables
+load_dotenv()
 
 # Get OpenAI API key from environment
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')

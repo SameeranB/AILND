@@ -25,8 +25,10 @@ async def course_list_page():
                     st.write(f"Duration: {course.duration or 'N/A'} hours")
                     # TODO: Add progress tracking
                     st.progress(0)  # Placeholder for progress
-                    if st.button("Start Course", key=f"start_{i}"):
-                        st.session_state.current_page = "take_course"
-                        st.session_state.selected_course = course
+                    if st.button("View Course", key=f"view_{i}"):
+                        # Store course ID and navigate to course index
+                        st.session_state.selected_course_id = str(course.id)
+                        st.session_state.current_page = "course_index"
+                        st.rerun()
     except Exception as e:
         st.error(f"Error loading courses: {str(e)}") 
